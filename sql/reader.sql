@@ -1,0 +1,22 @@
+CREATE SEQUENCE feed_seq;
+CREATE SEQUENCE entry_seq;
+
+CREATE TABLE feed_tbl (
+id BIGINT NOT NULL,
+source_id VARCHAR(2048) NOT NULL,
+name VARCHAR(2048) NOT NULL,
+url VARCHAR(2048) NOT NULL,
+CONSTRAINT feed_pk PRIMARY KEY ( id ) );
+
+CREATE TABLE entry_tbl (
+id BIGINT NOT NULL,
+feed_id BIGINT NOT NULL,
+source_id VARCHAR(2048) NOT NULL,
+title VARCHAR(2048) NOT NULL,
+url VARCHAR(2048) NOT NULL,
+updated TIMESTAMP NOT NULL,
+body text NOT NULL,
+read INT NOT NULL,
+CONSTRAINT entry_pk PRIMARY KEY ( id ),
+CONSTRAINT entry_feed_fk FOREIGN KEY ( feed_id ) REFERENCES feed_tbl ( id ) );
+

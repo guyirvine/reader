@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Reader</title>
+
+        <script src="js/jquery-1.7.2.min.js"></script>
+        <script src="js/knockout-2.1.0.js"></script>
+        <script src="js/reader.js"></script>
+        <link type="text/css" href="css/main.css" rel="stylesheet" />
+    </head>
+
+    <body>
+        <style>
+            body {
+                font-family: arial, sans-serif;
+                font-size: 14px;
+            }
+            
+            .container {
+                position: relative;
+            }
+            
+            .feeds {
+                width: 150px;
+                float: left;
+            }
+            .entrylist {
+                margin-left: 150px;
+                border: 1px solid #999999;
+                border-bottom: none;
+            }
+            
+            .button {
+                border-radius: 0.2em;
+                padding: 5px 15px;
+                text-decoration: none;
+                font-size: 13pt;
+                margin: 1px 4px;
+                color: white;
+                background-color: #0A94D6;
+            }
+            
+            .search input, .search a {
+                padding: 5px 15px;
+                font-size: 13pt;
+                margin: 1px 4px;
+            }
+            
+            div.search {
+                margin-left: 150px;
+                margin-bottom: 12px;
+            }
+            
+            .entrylist .head {
+                background-color: #EEEEEE;
+                border-bottom: 1px solid #999999;
+                padding: 6px 9px;
+            }
+            
+            .entrylist .head div {
+                display: inline;
+            }
+            
+            .entrylist .collapsed div.body {
+                display: none;
+            }
+            
+            .entrylist .entry .head .feed-name {
+                width: 80px;
+            }
+            .entrylist .entry .head .entry-date {
+                float: right;
+                text-align: right;
+            }
+            .entrylist .entry .head .feed-name {
+                float: left;
+                width: 120px;
+            }
+            .entrylist .entry .head .feed-name, .entrylist .entry .head .entry-date, .entrylist .entry .head .entry-summary {
+                color: #555;
+            }
+            
+            .entrylist .entry .head .entry-title {
+                margin-left: 80px;
+            }
+            .entrylist .entry .body {
+                background-color: white;
+                border: 1px solid #999999;
+                border-top: none;
+                padding: 6px 9px;
+            }
+            
+            .entrylist .entry .body .title {
+                margin-bottom: 9px;
+            }
+            .entrylist .entry .body .title a {
+                color: #15c;
+                font-size: 1.4em;
+                text-decoration: none;
+                margin-bottom: 9px;
+            }
+            
+            
+            .entrylist .unread .entry-title, .feeds .unread {
+                font-weight: bold;
+            }
+            .entrylist .unread {
+                background-color: white;
+            }
+            
+            .feeds a {
+                text-decoration: none;
+            }
+            
+            .entry .head {
+                cursor: pointer;
+            }
+            
+            .feeds .feed {
+                cursor: pointer;
+            }
+            
+            .hide {
+                display: none;
+            }
+            </style>
+        <div class="search">
+            <input type='text' /> <a href='' class='button'>Search</a>
+        </div>
+        
+        <div class="container">
+            <div class='feeds'>
+                <ul style='margin-bottom: 0;padding-bottom: 0'>
+                    <li data-bind="with: allFeeds"><div class='feed' href='' data-bind="text: displayName(), click: clickFeed, css: { unread: getNumberOfUnreadEntries() > 0 }">All</div></li>
+                    <group data-bind='foreach: feedList'>
+                        <li><div class='feed' href='' data-bind="text: displayName, click: clickFeed, css: { unread: getNumberOfUnreadEntries() > 0 }">Linus</div></li>
+                    </group>
+                </ul>
+            </div>
+
+            <div class="" data-bind="text: feedName">
+                All
+            </div>
+
+            <div class='entrylist' data-bind="foreach: entryList">
+                <div data-bind="attr: { id: displayId}" class='entry collapsed'>
+                    <div class='head' data-bind="click: clickEntry, css: { unread: read() == 0 }">
+                        <div class='feed-name' data-bind='text: feedName'>Linus</div>
+                        <div class='entry-title' data-bind='text: title'>Entry A</div>
+                        <div class='entry-summary' data-bind='text: summary'>Summary A</div>
+                        <div class='entry-date' data-bind='text: displayDate'>1 Jun 2013</div>
+                    </div>
+                    <div class='body'>
+                        <div class='title'><a href='' data-bind='text: title'>Title</a></div>
+                        <div class='entry-date' data-bind='html: body'>This is some entry</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+
+<script>
+    function Feed(id, name) {
+        var self = this;
+
+        self.id = id;
+        self.name = name;
+        self.list = ko.observableArray();
+        self.clickFeed = function(data, event) {
+            readerViewModel.feedName( self.name );
+            readerViewModel.filterByFeed( self.id );
+        }
+
+        self.addEntry = function( el ) {
+            self.list.push( el );
+        }
+
+        self.getNumberOfUnreadEntries = ko.computed( function() {
+            count = 0;
+            for( var i in self.list() ) {
+                var el = self.list()[i];
+                if ( el.read() == 0 ) {
+                    count = count + 1;
+                }
+            };
+
+            return count;
+        })
+        
+        self.displayName = ko.computed( function() {
+                                       var label = self.name;
+                                       if ( self.getNumberOfUnreadEntries() > 0 ) {
+                                       label = label + " (" + self.getNumberOfUnreadEntries() + ")"
+                                       }
+                                       
+                                       return label;
+                                       })
+    }
+
+    function FeedAll(feedList) {
+        var self = this;
+
+        self.name = "All Items";
+        self.feedList = feedList;
+        
+        self.clickFeed = function(data, event) {
+            readerViewModel.feedName( self.name );
+            readerViewModel.removeFilter();
+        }
+
+        self.getNumberOfUnreadEntries = ko.computed( function() {
+                                                    count = 0;
+                                                    for( var i in self.feedList() ) {
+                                                    var el = self.feedList()[i];
+                                                    count = count + el.getNumberOfUnreadEntries();
+                                                    };
+
+                                                    return count;
+                                                    });
+
+        self.displayName = ko.computed( function() {
+                                       var label = self.name;
+                                       if ( self.getNumberOfUnreadEntries() > 0 ) {
+                                       label = label + " (" + self.getNumberOfUnreadEntries() + ")"
+                                       }
+                                       
+                                       return label;
+                                       })
+        
+    }
+
+    function Entry(id, feed_id, feedName, title, date, body, read) {
+        var self = this;
+        self.feed_id = feed_id;
+        self.feedName = feedName;
+        self.title = title;
+        self.date = date;
+        self.body = body;
+        self.read = ko.observable(read);
+
+        self.summary = " - " + body.substring(0,50);
+
+        self.displayId = "entry-" + id;
+        self.displayDate = ko.computed( function() {
+                                       date = new Date( self.date );
+                                       today = new Date();
+                                       
+                                       if ( date.getDate() == today.getDate() &&
+                                           date.getMonth() == today.getMonth() &&
+                                           date.getYear() == today.getYear() ) {
+                                        label = formatTimeForDisplay( date );
+                                       } else {
+                                       label = formatDateForDisplay( date )
+                                       }
+                                       return label;
+                                       });
+
+        self.clickEntry = function(data, event) {
+            if ( self.read() == 0 ) { self.read( -1 ) };
+
+            var parent = $(event.currentTarget).parent();
+            if ( !$( parent ).hasClass( "collapsed" ) ) {
+                $( parent ).addClass( "collapsed" );
+            } else {
+                $( ".entrylist .entry" ).addClass( "collapsed" );
+                $( parent ).removeClass( "collapsed" );
+            }
+        }
+
+        self.searchcache = ( self.feedName + "" + self.title + "" + self.body ).toUpperCase();
+        
+        self.containsText = function( criteria ) {
+            return self.searchcache.indexOf( criteria ) > -1;
+        }
+
+    }
+    
+
+    function ReaderViewModel() {
+        var self = this;
+
+        /** Entry *****************************************/
+        self.fullEntryList = [];
+        self.entryList = ko.observableArray();
+        self.feedName = ko.observable("");
+
+        self.add = function( id, feed_id, title, date, body, read ) {
+            var feed = self.feeds[feed_id];
+            
+            
+            var entry = new Entry( id, feed_id, feed.name, title, date, body, read );
+            
+            feed.addEntry( entry );
+            self.fullEntryList.push( entry );
+        }
+        
+        /** Feed *****************************************/
+        self.feedList = ko.observableArray();
+        self.feeds = {};
+        self.allFeeds = new FeedAll( self.feedList );
+
+        self.addFeed = function( id, name ) {
+            var feed = new Feed(id, name);
+            self.feedList.push( feed );
+            self.feeds[id] = feed;
+        }
+
+        /** Entry List Filters *****************************************/
+        self.filterByFeed = function( feed_id ) {
+            self.entryList.removeAll();
+            self.fullEntryList.forEach( function(el) {
+                                       if ( el.feed_id == feed_id ) {
+                                       self.entryList.push( el );
+                                       }});
+        }
+        
+        self.removeFilter = function() {
+            self.entryList.removeAll();
+            self.fullEntryList.forEach( function(el) {
+                                       self.entryList.push( el );
+                                       });
+        }
+        
+    }
+    
+    function SearchFilter() {
+        var self = this;
+        
+        self.running = false;
+        self.nextCriteria = null;
+    
+        self.applyFilter = function(criteria) {
+            if ( criteria == "" ) {
+                readerViewModel.removeFilter()
+                return;
+            }
+            readerViewModel.entryList().forEach( function(entry) {
+                                             
+                                             var el = $( "#" + entry.displayId );
+                                             if ( entry.containsText( criteria ) ) {
+                                             el.removeClass( "hide" );
+                                             } else {
+                                             el.addClass( "hide" );
+                                             }
+
+                                             })
+        }
+
+        self.run = function(criteria) {
+            if ( self.running == true ) {
+                self.nextCriteria = criteria;
+                return;
+            }
+
+            self.running = true;
+            self.applyFilter( criteria.toUpperCase() );
+            self.running = false;
+            if ( self.nextCriteria != null ) {
+                var criteria = self.nextCriteria;
+                self.nextCriteria = null;
+                self.run( criteria );
+            }
+        }
+        
+        self.clearFilter = function() {
+            
+        }
+    }
+    
+    $( ".search input" ).keyup( function(e) {
+                                  searchFilter.run( $( e.currentTarget ).val() );
+                              })
+
+    var searchFilter = new SearchFilter();
+    var readerViewModel = new ReaderViewModel();
+    ko.applyBindings( readerViewModel );
+
+    $.getJSON( "data/feeds-1.js", function(obj) {
+              obj.feeds.forEach( function(feed) {
+                                readerViewModel.addFeed( feed.id, feed.name );
+                                })
+              obj.list.forEach( function(entry) {
+                                readerViewModel.add( entry.id, entry.feed_id, entry.title, entry.date, entry.body, entry.read );
+                                })
+              
+              readerViewModel.allFeeds.clickFeed();
+              });
+    </script>
