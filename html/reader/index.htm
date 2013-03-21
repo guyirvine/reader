@@ -240,7 +240,25 @@
         self.body = body;
         self.read = ko.observable(read);
 
-        self.summary = " - " + body.substring(0,50);
+        self.getSummary = function() {
+            content = self.body;
+            
+            match = content.match( /(.*?)<br/ );
+            if ( match != null ) {
+                content = match[1]
+            }
+
+            lengthOfSummary = 50;
+            if ( content.length > lengthOfSummary ) {
+                content = content.substring( 0, (lengthOfSummary-3) ) + "...";
+            }
+            content = " - " + content;
+
+
+            return content;
+        }
+        
+        self.summary = self.getSummary();
 
         self.displayId = "entry-" + id;
         self.displayDate = ko.computed( function() {
