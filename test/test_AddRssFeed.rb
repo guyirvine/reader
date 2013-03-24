@@ -1,31 +1,24 @@
 require 'test/unit'
-require './MessageHandler/AddAtomFeed.rb'
+require './MessageHandler/AddRssFeed.rb'
 
 
-class AddAtomFeedTest < Test::Unit::TestCase
+class AddRssFeedTest < Test::Unit::TestCase
     
     
     @payload
     @handler
     
     def setup
-        @payload = IO.read( "./data/linus.atom" );
-        @handler = MessageHandler_AddAtomFeed.new
+        @payload = IO.read( "./data/ayende.rss" );
+        @handler = MessageHandler_AddRssFeed.new
     end
     
-	def test_LoadXml
-        xml = @handler.LoadXml( @payload )
-
-		assert_equal "Hash", xml.class.name
-        assert_equal "Linus' blog", xml["title"][0]["content"]
-	end
-
 	def test_LoadTitle
         xml = @handler.LoadXml( @payload )
 
         title = @handler.getTitle( xml )
 
-        assert_equal "Linus' blog", title
+        assert_equal "Ayende @ Rahien", title
 	end
     
 	def test_LoadId
@@ -33,15 +26,15 @@ class AddAtomFeedTest < Test::Unit::TestCase
         
         id = @handler.getId( xml )
         
-        assert_equal "tag:blogger.com,1999:blog-4999557720148026925", id
+        assert_equal "http://ayende.com/blog/", id
 	end
     
     def test_getFeedPropertiesFromAtomAsHash
         xml = @handler.LoadXml( @payload )
         
-        props = @handler.getFeedPropertiesFromAtomAsHash( xml )
+        props = @handler.getFeedPropertiesFromRssAsHash( xml )
         
-        assert_equal Hash["id", "tag:blogger.com,1999:blog-4999557720148026925", "title", "Linus' blog", "url", "http://torvalds-family.blogspot.com/" ], props
+        assert_equal Hash["id", "http://ayende.com/blog/", "title", "Ayende @ Rahien", "url", "http://ayende.com/blog/" ], props
     end
 
 	def test_getEntries
@@ -56,6 +49,11 @@ class AddAtomFeedTest < Test::Unit::TestCase
         list = @handler.getEntries( xml )
         entry = list[0]
         
+        assert_equal String, entry["id"].class
+        assert_equal String, entry["title"].class
+        assert_equal String, entry["url"].class
+        assert_equal String, entry["updated"].class
+        assert_equal String, entry["body"].class
         
 	end
 

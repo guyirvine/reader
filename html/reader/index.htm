@@ -147,13 +147,13 @@
                 <div data-bind="attr: { id: displayId}" class='entry collapsed'>
                     <div class='head' data-bind="click: clickEntry, css: { unread: read() == 0 }">
                         <div class='feed-name' data-bind='text: feedName'>Linus</div>
-                        <div class='entry-title' data-bind='text: title'>Entry A</div>
-                        <div class='entry-summary' data-bind='html: summary'>Summary A</div>
                         <div class='entry-date' data-bind='text: displayDate'>1 Jun 2013</div>
+                        <span class='entry-title' data-bind='text: title'>Entry A</span>
+                        <span style='position: static;white-space: normal;width: auto;' class='entry-summary' data-bind='html: summary'>Summary A</span>
                     </div>
                     <div class='body'>
                         <div class='title'><a href='' data-bind='text: title'>Title</a></div>
-                        <div class='entry-date' data-bind='html: body'>This is some entry</div>
+                        <div class='entry-body'>This is some entry</div>
                     </div>
                 </div>
             </div>
@@ -241,14 +241,20 @@
         self.read = ko.observable(read);
 
         self.getSummary = function() {
-            content = self.body;
-            
+            lengthOfSummary = 50;
+            chopLength = 100;
+//            content = self.body;
+            content = self.body.substring( 0, chopLength );
+//            return content;
+
             match = content.match( /(.*?)<br/ );
             if ( match != null ) {
                 content = match[1]
             }
+            
+            content = content.replace( /<.*?>/g, "" );
+            
 
-            lengthOfSummary = 50;
             if ( content.length > lengthOfSummary ) {
                 content = content.substring( 0, (lengthOfSummary-3) ) + "...";
             }
@@ -285,6 +291,9 @@
                 $( ".entrylist .entry" ).addClass( "collapsed" );
                 $( parent ).removeClass( "collapsed" );
             }
+            
+            var div = $( "#" + self.displayId + " .body .entry-body" )[0];
+            $( div ).html( self.body );
         }
 
         self.searchcache = ( self.feedName + "" + self.title + "" + self.body ).toUpperCase();

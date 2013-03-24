@@ -2,30 +2,23 @@ require 'test/unit'
 require './MessageHandler/AddAtomFeed.rb'
 
 
-class AddAtomFeedTest < Test::Unit::TestCase
+class AddAtomFeedSethTest < Test::Unit::TestCase
     
     
     @payload
     @handler
     
     def setup
-        @payload = IO.read( "./data/linus.atom" );
+        @payload = IO.read( "./data/sethsmainblog" );
         @handler = MessageHandler_AddAtomFeed.new
     end
     
-	def test_LoadXml
-        xml = @handler.LoadXml( @payload )
-
-		assert_equal "Hash", xml.class.name
-        assert_equal "Linus' blog", xml["title"][0]["content"]
-	end
-
 	def test_LoadTitle
         xml = @handler.LoadXml( @payload )
 
         title = @handler.getTitle( xml )
-
-        assert_equal "Linus' blog", title
+        
+        assert_equal "Seth's Blog", title
 	end
     
 	def test_LoadId
@@ -33,15 +26,15 @@ class AddAtomFeedTest < Test::Unit::TestCase
         
         id = @handler.getId( xml )
         
-        assert_equal "tag:blogger.com,1999:blog-4999557720148026925", id
+        assert_equal "tag:typepad.com,2003:weblog-3511", id
 	end
     
     def test_getFeedPropertiesFromAtomAsHash
         xml = @handler.LoadXml( @payload )
         
         props = @handler.getFeedPropertiesFromAtomAsHash( xml )
-        
-        assert_equal Hash["id", "tag:blogger.com,1999:blog-4999557720148026925", "title", "Linus' blog", "url", "http://torvalds-family.blogspot.com/" ], props
+
+        assert_equal Hash["id", "tag:typepad.com,2003:weblog-3511", "title", "Seth's Blog", "url", "http://sethgodin.typepad.com/seths_blog/" ], props
     end
 
 	def test_getEntries
@@ -54,8 +47,10 @@ class AddAtomFeedTest < Test::Unit::TestCase
         xml = @handler.LoadXml( @payload )
         
         list = @handler.getEntries( xml )
-        entry = list[0]
         
+        entry = list[0]
+
+        assert_equal 2122, entry["body"].length
         
 	end
 

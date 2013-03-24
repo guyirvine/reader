@@ -22,7 +22,7 @@ class MessageHandler_GenerateFeed
 	def loadEntrys( msg )
         return @FluidDb.queryForResultset( "SELECT id, feed_id, title, updated AS date, body, read FROM entry_tbl ORDER BY updated DESC, title", [] );
     end
-    
+
     def getFilename( msg )
         return @OutputDir.path + "/feeds-" + msg.id.to_s + ".js"
     end

@@ -1,25 +1,28 @@
 require 'xmlsimple'
 
-class MessageHandler_AddAtomFeed
+class MessageHandler_AddRssFeed
     
 	attr_accessor :Bus, :FluidDb
     
 	def Handle( msg )
-        xml = msg.payload
+        xml = msg.payload["channel"][0]
+
         
-        feed = self.getFeedPropertiesFromAtomAsHash( xml )
+        feed = self.getFeedPropertiesFromRssAsHash( xml )
         feed_id = self.ensureFeedExists( feed );
         
         self.getEntries( xml ).each do |entry|
             self.ensureEntryExists( feed_id, entry )
         end
-        
         @Bus.Send( GenerateFeed.new( 1 ) )
 	end
-
+    
+    def LoadXml( payload )
+        xml = XmlSimple.xml_in( payload )
+        return xml["channel"][0]
+    end
+    
     def getContentFromXmlElement( el )
-
-        return el if el.is_a? String
 
         e = el[0]
         
@@ -36,11 +39,7 @@ class MessageHandler_AddAtomFeed
         return payload
     end
     
-    def LoadXml( payload )
-        return XmlSimple.xml_in( payload )
-    end
-    
-    def getFeedPropertiesFromAtomAsHash( xml )
+    def getFeedPropertiesFromRssAsHash( xml )
         id = self.getId( xml )
         title = self.getTitle( xml )
         url = self.getURLForFeed( xml )
@@ -49,11 +48,9 @@ class MessageHandler_AddAtomFeed
         
         return hash
     end
+
     def getURLForFeed( xml )
-        xml["link"].each do |link|
-            return link["href"] if link["rel"]=="alternate"
-        end
-        return nil;
+        return xml["link"][0]
     end
     
     def getTitle( xml )
@@ -62,9 +59,8 @@ class MessageHandler_AddAtomFeed
     end
     
     def getId( xml )
-        return xml["id"][0]
+        return xml["link"][0]
     end
-    
     
     def ensureFeedExists( feed )
         begin
@@ -78,13 +74,14 @@ class MessageHandler_AddAtomFeed
     
     def ensureEntryExists( feed_id, entry )
         begin
-            id = @FluidDb.queryForValue( "SELECT id FROM entry_tbl WHERE source_id = ?", [entry["id"]])
+            source_id = entry["id"]
+            id = @FluidDb.queryForValue( "SELECT id FROM entry_tbl WHERE source_id = ?", [source_id])
 
             @FluidDb.execute( "UPDATE entry_tbl SET title = ?, updated = ?, body = ?, read = ? WHERE id = ?",
                              [entry["title"], entry["updated"], entry["body"], 0, id ] );
             rescue FluidDb::NoDataFoundError => e
             @FluidDb.execute( "INSERT INTO entry_tbl( id, feed_id, source_id, title, url, updated, body, read ) VALUES ( NEXTVAL( 'entry_seq' ), ?, ?, ?, ?, ?, ?, ? )",
-                             [feed_id, entry["id"], entry["title"], entry["url"], entry["updated"], entry["body"], 0 ] );
+                             [feed_id, source_id, entry["title"], entry["url"], entry["updated"], entry["body"], 0 ] );
         end
     end
 
@@ -97,24 +94,15 @@ class MessageHandler_AddAtomFeed
     
     def getEntries( xml )
         list = Array.new
-        xml["entry"].each do |entry|
-            url = self.getURLForEntry( entry["link"] )
+        xml["item"].each do |entry|
+            id = self.getContentFromXmlElement(entry["guid"])
+            updated = self.getContentFromXmlElement(entry["pubDate"])
+            url = self.getContentFromXmlElement( entry["link"] )
             title = self.getContentFromXmlElement( entry["title"] )
-            #            body = self.getContentFromXmlElement( entry["content"]["content"] )
-            body = self.getContentFromXmlElement( entry["content"]["content"] )
-            hash = Hash["id", entry["id"][0], "updated", entry["updated"][0], "title", title, "url", url, "body", body]
+            body = self.getContentFromXmlElement( entry["description"] )
 
-            #id
-            #published
-            #updated
-            #category
-            #title
-            #content
-            #link
-            #author
-            #total
-            #            puts entry["link"]
-            
+            hash = Hash["id", id, "updated", updated, "title", title, "url", url, "body", body]
+
             list << hash
             
         end
