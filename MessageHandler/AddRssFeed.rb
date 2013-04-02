@@ -6,7 +6,6 @@ class MessageHandler_AddRssFeed
     
 	def Handle( msg )
         xml = msg.payload["channel"][0]
-
         
         feed = self.getFeedPropertiesFromRssAsHash( xml )
         feed_id = self.ensureFeedExists( feed );

@@ -10,17 +10,17 @@ class MessageHandler_GenerateFeed
 	def Handle( msg )
         feedList = self.loadFeeds( msg );
         entryList = self.loadEntrys( msg );
-        
+
         hash = Hash["feeds", feedList, "list", entryList]
         self.writeFile( self.getFilename( msg ), hash.to_json )
     end
 
 	def loadFeeds( msg )
-        return @FluidDb.queryForResultset( "SELECT id, name FROM feed_tbl ORDER BY name", [] );
+        return @FluidDb.queryForResultset( "SELECT f.id, f.name FROM feed_vw f WHERE f.user_id = ? ORDER BY name", [msg.id] );
     end
 
 	def loadEntrys( msg )
-        return @FluidDb.queryForResultset( "SELECT id, feed_id, title, updated AS date, body, read FROM entry_tbl ORDER BY updated DESC, title", [] );
+        return @FluidDb.queryForResultset( "SELECT e.id, e.feed_id, e.title, e.updated AS date, e.body, e.read FROM entry_vw e WHERE e.user_id = ? ORDER BY date DESC, e.title", [msg.id] );
     end
 
     def getFilename( msg )
